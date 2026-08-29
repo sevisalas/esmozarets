@@ -531,13 +531,9 @@ export default function App() {
                 />
               </>
             ) : (
-              <article className="next-meetup-placeholder">
-                <div>
-                  <p className="eyebrow">Próximo esmorzaret</p>
-                  <h2>Todavía no hay fecha para el próximo</h2>
-                  <p className="event-place">Se puede abrir una votación para decidir lugar y fecha entre todos.</p>
-                </div>
-                {isAdmin && <button className="primary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>}
+              <article className="next-meetup-placeholder next-meetup-mini">
+                <span>Todavía no hay fecha para el próximo esmorzaret.</span>
+                {isAdmin && <button className="secondary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>}
               </article>
             )}
           </section>
