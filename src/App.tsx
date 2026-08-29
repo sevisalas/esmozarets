@@ -10,6 +10,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { ProfilePanel } from './components/ProfilePanel';
 import { HelpModal } from './components/HelpModal';
 import { ProposalForm } from './components/ProposalForm';
+import { EventForm } from './components/EventForm';
 
 const MEMBER_STORAGE_KEY = 'alumni_lunch_member_id';
 const showDiagnostics = import.meta.env.VITE_SHOW_DIAGNOSTICS === 'true';
@@ -26,6 +27,7 @@ export default function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isProposalFormOpen, setIsProposalFormOpen] = useState(false);
   const [editingProposal, setEditingProposal] = useState<DanceEvent | null>(null);
+  const [eventDraft, setEventDraft] = useState<DanceEvent | null>(null);
   const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(() => new Set());
   const [loginName, setLoginName] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -293,14 +295,52 @@ export default function App() {
     }
   };
 
+  const mostVoted = (values: string[]): string => {
+    const counts = new Map<string, number>();
+    for (const value of values) {
+      if (!value) continue;
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    let winner = '';
+    let best = 0;
+    for (const [value, count] of counts) {
+      if (count > best) {
+        best = count;
+        winner = value;
+      }
+    }
+    return winner;
+  };
+
   const handleCloseProposal = async () => {
     if (!activeProposal) return;
-    if (!window.confirm('¿Cerrar la votación? No se podrá reabrir.')) return;
+    if (!window.confirm('¿Cerrar la propuesta? No se podrá reabrir. Después crearás el evento con la opción ganadora.')) return;
     setIsSaving(true);
     try {
-      const result = await updateEvent({ ...activeProposal, finished: true });
+      const proposalVotes = attendances.filter((attendance) => attendance.eventId === activeProposal.id);
+      const winnerPlaceId = mostVoted(proposalVotes.map((vote) => vote.preferredPlaceId)) || activeProposal.candidatePlaceIds[0] || '';
+      const winnerDate = mostVoted(proposalVotes.map((vote) => vote.preferredDate)) || activeProposal.possibleDates[0] || '';
+      const winnerPlace = places.find((place) => place.id === winnerPlaceId);
+      const result = await updateEvent({ ...activeProposal, finished: true, active: false });
       syncState(result);
-      showTemporaryMessage('Votación cerrada');
+      setEventDraft({
+        id: crypto.randomUUID(),
+        title: activeProposal.title,
+        date: winnerDate,
+        time: '',
+        location: winnerPlace?.name ?? '',
+        placeId: winnerPlaceId,
+        isPlanning: false,
+        candidatePlaceIds: [],
+        possibleDates: [],
+        clothingRequired: false,
+        notes: activeProposal.notes,
+        imageUrl: '',
+        active: true,
+        finished: false,
+        createdAt: new Date().toISOString(),
+      });
+      showTemporaryMessage('Propuesta cerrada. Revisa el evento.');
     } catch (error) {
       setDataSourceError(error);
     } finally {
@@ -547,7 +587,21 @@ export default function App() {
           )}
 
           <section className="proposal-section">
-            {isProposalFormOpen ? (
+            {eventDraft ? (
+              <>
+                <p className="eyebrow">Crear el evento con la opción ganadora</p>
+                <EventForm
+                  initialEvent={eventDraft}
+                  places={places}
+                  onUploadImage={uploadEventImage}
+                  onSubmit={async (event) => {
+                    await handleCreateEvent(event);
+                    setEventDraft(null);
+                  }}
+                  onCancel={() => setEventDraft(null)}
+                />
+              </>
+            ) : isProposalFormOpen ? (
               <ProposalForm
                 initialProposal={editingProposal}
                 places={places}
@@ -575,7 +629,7 @@ export default function App() {
                       Editar propuesta
                     </button>
                     <button className="secondary-action" disabled={isSaving} onClick={() => void handleCloseProposal()}>
-                      Cerrar votación
+                      Cerrar propuesta
                     </button>
                   </div>
                 )}

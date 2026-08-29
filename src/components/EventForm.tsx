@@ -81,7 +81,7 @@ export function EventForm({ initialEvent, onSubmit, onUploadImage, onCancel, pla
 
   return (
     <form className="form-card" onSubmit={handleSubmit}>
-      <h3>{initialEvent ? 'Editar evento' : 'Nuevo evento'}</h3>
+      <h3>{initialEvent && /^\d+$/.test(initialEvent.id) ? 'Editar evento' : 'Nuevo evento'}</h3>
       <label>
         Título
         <input value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} required />
