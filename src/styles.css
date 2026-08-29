@@ -606,6 +606,19 @@ h3 {
   font-size: 0.9rem;
 }
 
+.event-card .expand-button {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.event-card .expand-button:hover,
+.event-card .expand-button:focus-visible {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: #fff;
+}
+
 .expand-button:hover,
 .expand-button:focus-visible {
   background: var(--color-primary-soft);
