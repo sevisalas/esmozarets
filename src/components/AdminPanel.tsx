@@ -49,7 +49,8 @@ export function AdminPanel({
     return null;
   }
 
-  const sortedEvents = [...events].sort(compareEvents);
+  const sortedEvents = [...events].filter((event) => !event.isPlanning).sort(compareEvents);
+  const proposals = [...events].filter((event) => event.isPlanning).sort(compareEvents);
   const sortedMembers = [...members].sort((a, b) => {
     if (a.active !== b.active) {
       return a.active ? -1 : 1;
@@ -106,6 +107,32 @@ export function AdminPanel({
               }}
             />
           )}
+          <h4 className="admin-sublabel">Propuestas en votación (paso previo, todavía no son un evento)</h4>
+          <ul className="list-stack">
+            {proposals.length === 0 && <li className="list-empty">No hay ninguna propuesta abierta.</li>}
+            {proposals.map((event) => (
+              <li key={event.id}>
+                <div>
+                  <strong>{event.title}</strong>
+                  <p>{event.candidatePlaceIds.length} lugares · {event.possibleDates.length} fechas candidatas</p>
+                  <span className={`status-badge ${event.finished ? 'status-no' : event.active ? 'status-yes' : 'status-muted'}`}>
+                    {event.finished ? 'Votación cerrada' : 'Votación abierta'}
+                  </span>
+                </div>
+                <div className="inline-actions">
+                  <button className="secondary-btn" onClick={() => {
+                    setEditingEvent(event);
+                    setIsEventFormOpen(true);
+                  }} disabled={isSaving}>Editar</button>
+                  <button className="secondary-btn" onClick={() => void onUpdateEvent({ ...event, finished: !event.finished })} disabled={isSaving}>
+                    {event.finished ? 'Reabrir' : 'Cerrar votación'}
+                  </button>
+                  <button className="secondary-btn" onClick={() => void onDeleteEvent(event.id)} disabled={isSaving}>Eliminar</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <h4 className="admin-sublabel">Almuerzos con fecha y lugar</h4>
           <ul className="list-stack">
             {sortedEvents.map((event) => (
               <li key={event.id}>

@@ -70,11 +70,12 @@ export default function App() {
 
   const pendingEvents = useMemo(() => {
     return [...events]
-      .filter((event) => isEventPending(event))
-      .sort((a, b) => {
-        if (a.isPlanning !== b.isPlanning) return a.isPlanning ? 1 : -1;
-        return compareEvents(a, b);
-      });
+      .filter((event) => isEventPending(event) && !event.isPlanning)
+      .sort(compareEvents);
+  }, [events]);
+
+  const activeProposal = useMemo(() => {
+    return events.find((event) => event.isPlanning && event.active && !event.finished) ?? null;
   }, [events]);
 
   const syncState = (result: StorageResult) => {
@@ -476,6 +477,32 @@ export default function App() {
 
       {isAuthenticated && !isAdminOpen && !isProfileOpen && (
         <main className="content-stack">
+          <section className="proposal-section">
+            <p className="eyebrow">Antes de nada · votación</p>
+            {activeProposal ? (
+              <EventCard
+                key={activeProposal.id}
+                event={activeProposal}
+                attendances={attendances.filter((attendance) => attendance.eventId === activeProposal.id)}
+                members={members}
+                places={places}
+                summary={getAttendanceSummary(attendances.filter((attendance) => attendance.eventId === activeProposal.id))}
+                isExpanded
+                onToggleExpanded={() => toggleEventExpanded(activeProposal.id)}
+                onUpdateAttendance={() => openAttendanceModal(activeProposal, 'edit')}
+                onViewInscritos={() => openAttendanceModal(activeProposal, 'view')}
+              />
+            ) : (
+              <article className="event-card next-meetup-placeholder">
+                <div>
+                  <h2>Aún no hay ninguna quedada en votación</h2>
+                  <p className="event-place">La propuesta es el paso previo: se vota lugar y fecha antes de fijar el esmorzaret.</p>
+                </div>
+                {isAdmin && <button className="primary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>}
+              </article>
+            )}
+          </section>
+
           {pendingEvents.length === 0 ? (
             <div className="empty-state empty-state-panel">
               <span className="empty-icon" aria-hidden="true">🍽</span>
@@ -510,16 +537,6 @@ export default function App() {
                 );
               })}
             </>
-          )}
-          {!pendingEvents.some((event) => event.isPlanning) && (
-            <article className="event-card next-meetup-placeholder">
-              <div>
-                <p className="eyebrow">Próximo esmorzaret</p>
-                <h2>Elegimos el próximo esmorzaret</h2>
-                <p className="event-place">Añade lugares candidatos y posibles fechas para abrir la votación del grupo.</p>
-              </div>
-              <button className="primary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>
-            </article>
           )}
         </main>
       )}

@@ -257,6 +257,31 @@ h3 {
   display: none;
 }
 
+.proposal-section {
+  border: 1px dashed var(--color-accent);
+  border-radius: 18px;
+  padding: 12px;
+  margin-bottom: 18px;
+  background: #FCF6EF;
+}
+
+.proposal-section .eyebrow {
+  color: var(--color-accent);
+}
+
+.admin-sublabel {
+  margin: 16px 0 6px;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.list-empty {
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  border: none;
+  padding: 4px 0;
+}
+
 .top-actions button {
   width: auto;
   min-height: 36px;
