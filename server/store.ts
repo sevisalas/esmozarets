@@ -8,7 +8,7 @@ const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS members (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE COLLATE NOCASE, name TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, password_hash TEXT NOT NULL, created_at TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS places (id TEXT PRIMARY KEY, name TEXT NOT NULL, address TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '', image_url TEXT NOT NULL DEFAULT '', active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, title TEXT NOT NULL, date TEXT NOT NULL, time TEXT NOT NULL, location TEXT NOT NULL, place_id TEXT NOT NULL DEFAULT '', is_planning INTEGER NOT NULL DEFAULT 0, candidate_place_ids TEXT NOT NULL DEFAULT '[]', possible_dates TEXT NOT NULL DEFAULT '[]', reservation_confirmed INTEGER NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '', image_url TEXT NOT NULL DEFAULT '', active INTEGER NOT NULL DEFAULT 1, finished INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)`,
-  `CREATE TABLE IF NOT EXISTS attendances (id TEXT PRIMARY KEY, event_id TEXT NOT NULL, member_id TEXT NOT NULL, status TEXT NOT NULL, comment TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, UNIQUE(event_id, member_id))`,
+  `CREATE TABLE IF NOT EXISTS attendances (id TEXT PRIMARY KEY, event_id TEXT NOT NULL, member_id TEXT NOT NULL, status TEXT NOT NULL, preferred_place_id TEXT NOT NULL DEFAULT '', preferred_date TEXT NOT NULL DEFAULT '', comment TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, UNIQUE(event_id, member_id))`,
   `CREATE INDEX IF NOT EXISTS idx_events_place_id ON events(place_id)`,
   `CREATE INDEX IF NOT EXISTS idx_attendances_event_member ON attendances(event_id, member_id)`,
 ];
@@ -35,6 +35,13 @@ export async function ensureDatabase() {
     ['possible_dates', "ALTER TABLE events ADD COLUMN possible_dates TEXT NOT NULL DEFAULT '[]'"],
   ].filter(([name]) => !columnNames.has(name));
   if (additions.length) await siteEnv.DB.batch(additions.map(([, sql]) => siteEnv.DB.prepare(sql)));
+  const attendanceColumns = await siteEnv.DB.prepare('PRAGMA table_info(attendances)').all<{ name: string }>();
+  const attendanceColumnNames = new Set(attendanceColumns.results.map((column) => column.name));
+  const attendanceAdditions = [
+    ['preferred_place_id', "ALTER TABLE attendances ADD COLUMN preferred_place_id TEXT NOT NULL DEFAULT ''"],
+    ['preferred_date', "ALTER TABLE attendances ADD COLUMN preferred_date TEXT NOT NULL DEFAULT ''"],
+  ].filter(([name]) => !attendanceColumnNames.has(name));
+  if (attendanceAdditions.length) await siteEnv.DB.batch(attendanceAdditions.map(([, sql]) => siteEnv.DB.prepare(sql)));
   const count = await siteEnv.DB.prepare('SELECT COUNT(*) AS count FROM members').first<{ count: number }>();
   if (!count?.count) {
     const now = new Date().toISOString();
@@ -63,7 +70,7 @@ const eventFromRow = (row: Record<string, unknown>): DanceEvent => ({
   id: String(row.id), title: String(row.title), date: String(row.date), time: String(row.time), location: String(row.location), placeId: String(row.place_id), isPlanning: Boolean(row.is_planning), candidatePlaceIds: JSON.parse(String(row.candidate_place_ids || '[]')), possibleDates: JSON.parse(String(row.possible_dates || '[]')), clothingRequired: Boolean(row.reservation_confirmed), notes: String(row.notes), imageUrl: String(row.image_url), active: Boolean(row.active), finished: Boolean(row.finished), createdAt: String(row.created_at),
 });
 const attendanceFromRow = (row: Record<string, unknown>): Attendance => ({
-  id: String(row.id), eventId: String(row.event_id), memberId: String(row.member_id), status: row.status as Attendance['status'], comment: String(row.comment), updatedAt: String(row.updated_at),
+  id: String(row.id), eventId: String(row.event_id), memberId: String(row.member_id), status: row.status as Attendance['status'], preferredPlaceId: String(row.preferred_place_id || ''), preferredDate: String(row.preferred_date || ''), comment: String(row.comment), updatedAt: String(row.updated_at),
 });
 
 export async function getAllData(): Promise<AppData> {
@@ -106,9 +113,9 @@ export async function deleteEvent(id: string) {
 }
 
 export async function saveAttendance(attendance: Attendance) {
-  await siteEnv.DB.prepare(`INSERT INTO attendances (id, event_id, member_id, status, comment, updated_at) VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(event_id, member_id) DO UPDATE SET status=excluded.status, comment=excluded.comment, updated_at=excluded.updated_at`)
-    .bind(attendance.id, attendance.eventId, attendance.memberId, attendance.status, attendance.comment, attendance.updatedAt).run();
+  await siteEnv.DB.prepare(`INSERT INTO attendances (id, event_id, member_id, status, preferred_place_id, preferred_date, comment, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(event_id, member_id) DO UPDATE SET status=excluded.status, preferred_place_id=excluded.preferred_place_id, preferred_date=excluded.preferred_date, comment=excluded.comment, updated_at=excluded.updated_at`)
+    .bind(attendance.id, attendance.eventId, attendance.memberId, attendance.status, attendance.preferredPlaceId, attendance.preferredDate, attendance.comment, attendance.updatedAt).run();
 }
 
 export async function clearAttendance(eventId: string, memberId: string) {

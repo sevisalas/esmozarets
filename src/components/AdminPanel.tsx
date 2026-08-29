@@ -18,9 +18,6 @@ interface AdminPanelProps {
   onUpdateMember: (member: Member) => Promise<void>;
   onCreatePlace: (place: Place) => Promise<void>;
   onUpdatePlace: (place: Place) => Promise<void>;
-  onReloadData: () => Promise<void>;
-  onExportData: () => void;
-  onImportData: (file: File) => Promise<void>;
   isSaving?: boolean;
   onClose: () => void;
 }
@@ -38,9 +35,6 @@ export function AdminPanel({
   onUpdateMember,
   onCreatePlace,
   onUpdatePlace,
-  onReloadData,
-  onExportData,
-  onImportData,
   isSaving = false,
   onClose,
 }: AdminPanelProps) {
@@ -79,18 +73,6 @@ export function AdminPanel({
           <p className="admin-copy">Prepara los próximos almuerzos y mantén al día el grupo.</p>
         </div>
         <div className="inline-actions">
-          <button className="secondary-btn" onClick={onExportData} disabled={isSaving}>Descargar copia</button>
-          <label className="secondary-btn import-data-label">
-            Importar copia
-            <input type="file" accept="application/json,.json" hidden onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = '';
-              if (file) void onImportData(file);
-            }} />
-          </label>
-          <button className="secondary-btn" onClick={() => void onReloadData()} disabled={isSaving}>
-            Recargar datos
-          </button>
           <button className="secondary-btn" onClick={onClose} disabled={isSaving}>Cerrar</button>
         </div>
       </div>

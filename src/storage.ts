@@ -130,6 +130,8 @@ function normalizeData(data: Partial<AppData>): AppData {
     attendanceByMemberAndEvent.set(`${attendance.eventId}:${attendance.memberId}`, {
       ...attendance,
       comment: attendance.comment ?? '',
+      preferredPlaceId: attendance.preferredPlaceId ?? '',
+      preferredDate: attendance.preferredDate ?? '',
       updatedAt: attendance.updatedAt || nowIso(),
     });
   });

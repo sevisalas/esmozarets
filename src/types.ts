@@ -34,6 +34,8 @@ export interface Attendance {
   eventId: string;
   memberId: string;
   status: AttendanceStatus;
+  preferredPlaceId: string;
+  preferredDate: string;
   comment: string;
   updatedAt: string;
 }

@@ -55,6 +55,8 @@ interface BaserowAttendanceRow {
   eventId?: string;
   memberId?: string;
   status?: AttendanceStatus | string;
+  preferredPlaceId?: string;
+  preferredDate?: string;
   comment?: string;
   updatedAt?: string;
   uniqueKey?: string;
@@ -252,6 +254,8 @@ function attendanceFromRow(row: BaserowAttendanceRow): Attendance | null {
     eventId: row.eventId ?? '',
     memberId: row.memberId ?? '',
     status: row.status as AttendanceStatus,
+    preferredPlaceId: row.preferredPlaceId ?? '',
+    preferredDate: row.preferredDate ?? '',
     comment: row.comment ?? '',
     updatedAt: row.updatedAt ?? '',
   };
@@ -312,6 +316,8 @@ function attendanceToPayload(attendance: Attendance) {
     eventId: attendance.eventId,
     memberId: attendance.memberId,
     status: attendance.status,
+    preferredPlaceId: attendance.preferredPlaceId,
+    preferredDate: attendance.preferredDate,
     comment: attendance.comment,
     updatedAt: attendance.updatedAt,
     uniqueKey: attendanceUniqueKey(attendance.eventId, attendance.memberId),

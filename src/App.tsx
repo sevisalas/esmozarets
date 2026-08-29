@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Attendance, DanceEvent, Member, Place } from './types';
-import { addAttendance, addEvent, addMember, addPlace, deleteEvent, getConfiguredDataSource, importDatabaseData, loadData, loginMember, logoutMember, removeAttendance, saveSampleEvents, updateEvent, updateMember, updatePlace, uploadEventImage, type DataSourceMeta, type StorageResult } from './storage';
+import { addAttendance, addEvent, addMember, addPlace, deleteEvent, getConfiguredDataSource, loadData, loginMember, logoutMember, removeAttendance, saveSampleEvents, updateEvent, updateMember, updatePlace, uploadEventImage, type DataSourceMeta, type StorageResult } from './storage';
 import { getAttendanceSummary, isEventPending, compareEvents } from './utils';
 import { EventCard } from './components/EventCard';
 import { AttendanceModal } from './components/AttendanceModal';
@@ -353,32 +353,6 @@ export default function App() {
     }
   };
 
-  const handleReloadData = async () => {
-    await refreshData();
-  };
-
-  const handleExportData = () => {
-    const blob = new Blob([JSON.stringify({ members, events, attendances, places }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `esmorzarets-copia-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportData = async (file: File) => {
-    setIsSaving(true);
-    try {
-      const data = JSON.parse(await file.text()) as StorageResult['data'];
-      syncState(await importDatabaseData(data));
-      showTemporaryMessage('Datos importados correctamente');
-    } catch (error) {
-      setMessage(getTechnicalMessage(error) || 'No se ha podido importar la copia');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <div className="app-shell">
@@ -499,6 +473,16 @@ export default function App() {
 
       {isAuthenticated && !isAdminOpen && !isProfileOpen && (
         <main className="content-stack">
+          {!pendingEvents.some((event) => event.isPlanning) && (
+            <article className="event-card next-meetup-placeholder">
+              <div>
+                <p className="eyebrow">Próximo esmorzaret</p>
+                <h2>Elegimos el próximo esmorzaret</h2>
+                <p className="event-place">Añade lugares candidatos y posibles fechas para abrir la votación del grupo.</p>
+              </div>
+              <button className="primary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>
+            </article>
+          )}
           {pendingEvents.length === 0 ? (
             <div className="empty-state empty-state-panel">
               <span className="empty-icon" aria-hidden="true">🍽</span>
@@ -541,6 +525,7 @@ export default function App() {
         <AdminPanel
           isAdmin={isAdmin}
           members={members}
+          places={places}
           events={events}
           places={places}
           onCreateEvent={handleCreateEvent}
@@ -551,9 +536,6 @@ export default function App() {
           onUpdateMember={handleUpdateMember}
           onCreatePlace={handleCreatePlace}
           onUpdatePlace={handleUpdatePlace}
-          onReloadData={handleReloadData}
-          onExportData={handleExportData}
-          onImportData={handleImportData}
           isSaving={isSaving}
           onClose={() => {
             setIsAdminOpen(false);

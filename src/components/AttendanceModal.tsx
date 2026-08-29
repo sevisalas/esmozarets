@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Attendance, AttendanceFormStatus, DanceEvent, Member } from '../types';
+import type { Attendance, AttendanceFormStatus, DanceEvent, Member, Place } from '../types';
 import { formatDateLabel, formatStatus, getAttendanceSummary } from '../utils';
 
 interface AttendanceModalProps {
   event: DanceEvent;
   currentMember: Member;
   members: Member[];
+  places: Place[];
   attendances?: Attendance[];
   mode?: 'edit' | 'view';
   onClose: () => void;
@@ -18,6 +19,7 @@ export function AttendanceModal({
   event,
   currentMember,
   members,
+  places,
   attendances = [],
   mode = 'edit',
   onClose,
@@ -27,15 +29,21 @@ export function AttendanceModal({
 }: AttendanceModalProps) {
   const [status, setStatus] = useState<AttendanceFormStatus>('En blanco');
   const [comment, setComment] = useState('');
+  const [preferredPlaceId, setPreferredPlaceId] = useState('');
+  const [preferredDate, setPreferredDate] = useState('');
 
   useEffect(() => {
     const selectedAttendance = attendances.find((attendance) => attendance.memberId === currentMember.id);
     if (selectedAttendance) {
       setStatus(selectedAttendance.status as AttendanceFormStatus);
       setComment(selectedAttendance.comment);
+      setPreferredPlaceId(selectedAttendance.preferredPlaceId);
+      setPreferredDate(selectedAttendance.preferredDate);
     } else {
       setStatus('En blanco');
       setComment('');
+      setPreferredPlaceId('');
+      setPreferredDate('');
     }
   }, [attendances, currentMember.id]);
 
@@ -51,7 +59,7 @@ export function AttendanceModal({
   const handleSubmit = (formEvent: FormEvent) => {
     formEvent.preventDefault();
 
-    if (status === 'En blanco') {
+    if (!event.isPlanning && status === 'En blanco') {
       void onRemove?.(event.id, currentMember.id);
       return;
     }
@@ -60,7 +68,9 @@ export function AttendanceModal({
       id: attendances.find((attendance) => attendance.memberId === currentMember.id)?.id ?? crypto.randomUUID(),
       eventId: event.id,
       memberId: currentMember.id,
-      status,
+      status: event.isPlanning ? 'Sí' : status,
+      preferredPlaceId,
+      preferredDate,
       comment,
       updatedAt: new Date().toISOString(),
     };
@@ -75,7 +85,7 @@ export function AttendanceModal({
           <div>
             <p className="eyebrow">Nuestro próximo encuentro</p>
             <h3>{event.title}</h3>
-            <p className="modal-subtitle">{formatDateLabel(event.date)} · {event.time}</p>
+            <p className="modal-subtitle">{event.isPlanning ? 'Elegimos lugar y fecha' : `${formatDateLabel(event.date)} · ${event.time}`}</p>
           </div>
           <button className="icon-btn" onClick={onClose}>✕</button>
         </div>
@@ -103,6 +113,7 @@ export function AttendanceModal({
                         </span>
                       </div>
                       {attendance.comment && <p>{attendance.comment}</p>}
+                      {event.isPlanning && <p>{places.find((place) => place.id === attendance.preferredPlaceId)?.name || 'Sin lugar'} · {attendance.preferredDate ? formatDateLabel(attendance.preferredDate) : 'Sin fecha'}</p>}
                     </li>
                   );
                 })}
@@ -114,7 +125,7 @@ export function AttendanceModal({
             <div className="read-only-field">
               <span>Almuerzo</span>
               <strong>{event.title}</strong>
-              <small>{formatDateLabel(event.date)} · {event.time}</small>
+              <small>{event.isPlanning ? 'Selección para el próximo esmorzaret' : `${formatDateLabel(event.date)} · ${event.time}`}</small>
             </div>
 
             <div className="read-only-field">
@@ -122,7 +133,24 @@ export function AttendanceModal({
               <strong>{currentMember.name}</strong>
             </div>
 
-            <label>
+            {event.isPlanning && <label>
+              Lugar que prefieres
+              <select value={preferredPlaceId} onChange={(e) => setPreferredPlaceId(e.target.value)} required>
+                <option value="">Selecciona un lugar</option>
+                {event.candidatePlaceIds.map((id) => {
+                  const place = places.find((item) => item.id === id);
+                  return place ? <option key={id} value={id}>{place.name}</option> : null;
+                })}
+              </select>
+            </label>}
+            {event.isPlanning && <label>
+              Fecha que prefieres
+              <select value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)} required>
+                <option value="">Selecciona una fecha</option>
+                {event.possibleDates.map((date) => <option key={date} value={date}>{formatDateLabel(date)}</option>)}
+              </select>
+            </label>}
+            {!event.isPlanning && <label>
               ¿Podrás venir?
               <select value={status} onChange={(event) => setStatus(event.target.value as AttendanceFormStatus)}>
                 <option value="Sí">Sí, cuenta conmigo</option>
@@ -130,7 +158,7 @@ export function AttendanceModal({
                 <option value="No">Esta vez no podré</option>
                 <option value="En blanco">Quitar mi respuesta</option>
               </select>
-            </label>
+            </label>}
 
             <label>
               Comentario opcional
@@ -145,8 +173,8 @@ export function AttendanceModal({
 
             <div className="modal-actions">
               <button type="button" className="secondary-btn" onClick={onClose} disabled={isSaving}>Cancelar</button>
-              <button type="submit" className="primary-btn" disabled={isSaving}>
-                {isSaving ? 'Guardando...' : status === 'En blanco' ? 'Eliminar respuesta' : 'Guardar asistencia'}
+              <button type="submit" className="primary-btn" disabled={isSaving || (event.isPlanning && (!preferredPlaceId || !preferredDate))}>
+                {isSaving ? 'Guardando...' : event.isPlanning ? 'Guardar mi elección' : status === 'En blanco' ? 'Eliminar respuesta' : 'Guardar asistencia'}
               </button>
             </div>
           </form>

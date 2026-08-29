@@ -23,6 +23,21 @@
   font-weight: 400;
 }
 
+.next-meetup-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 2px dashed var(--color-primary-soft);
+}
+
+@media (max-width: 620px) {
+  .next-meetup-placeholder {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
