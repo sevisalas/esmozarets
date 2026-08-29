@@ -532,7 +532,7 @@ export default function App() {
               </>
             ) : (
               <article className="next-meetup-placeholder next-meetup-mini">
-                <span>Buscar fecha para el próximo esmorzaret</span>
+                <span>Buscar fecha y lugar para el próximo esmorzaret</span>
                 {isAdmin && <button className="secondary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>}
               </article>
             )}
