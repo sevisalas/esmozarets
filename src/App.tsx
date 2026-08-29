@@ -513,23 +513,34 @@ export default function App() {
             </>
           )}
 
-          {activeProposal && (
-            <section className="proposal-section">
-              <p className="eyebrow">Propuesta · votación abierta</p>
-              <EventCard
-                key={activeProposal.id}
-                event={activeProposal}
-                attendances={attendances.filter((attendance) => attendance.eventId === activeProposal.id)}
-                members={members}
-                places={places}
-                summary={getAttendanceSummary(attendances.filter((attendance) => attendance.eventId === activeProposal.id))}
-                isExpanded={expandedEventIds.has(activeProposal.id)}
-                onToggleExpanded={() => toggleEventExpanded(activeProposal.id)}
-                onUpdateAttendance={() => openAttendanceModal(activeProposal, 'edit')}
-                onViewInscritos={() => openAttendanceModal(activeProposal, 'view')}
-              />
-            </section>
-          )}
+          <section className="proposal-section">
+            {activeProposal ? (
+              <>
+                <p className="eyebrow">Propuesta · votación abierta</p>
+                <EventCard
+                  key={activeProposal.id}
+                  event={activeProposal}
+                  attendances={attendances.filter((attendance) => attendance.eventId === activeProposal.id)}
+                  members={members}
+                  places={places}
+                  summary={getAttendanceSummary(attendances.filter((attendance) => attendance.eventId === activeProposal.id))}
+                  isExpanded={expandedEventIds.has(activeProposal.id)}
+                  onToggleExpanded={() => toggleEventExpanded(activeProposal.id)}
+                  onUpdateAttendance={() => openAttendanceModal(activeProposal, 'edit')}
+                  onViewInscritos={() => openAttendanceModal(activeProposal, 'view')}
+                />
+              </>
+            ) : (
+              <article className="next-meetup-placeholder">
+                <div>
+                  <p className="eyebrow">Próximo esmorzaret</p>
+                  <h2>Todavía no hay fecha para el próximo</h2>
+                  <p className="event-place">Se puede abrir una votación para decidir lugar y fecha entre todos.</p>
+                </div>
+                {isAdmin && <button className="primary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>}
+              </article>
+            )}
+          </section>
         </main>
       )}
 
