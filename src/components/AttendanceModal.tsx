@@ -125,7 +125,7 @@ export function AttendanceModal({
             <div className="read-only-field">
               <span>Almuerzo</span>
               <strong>{event.title}</strong>
-              <small>{event.isPlanning ? 'Selección para el próximo esmorzaret' : `${formatDateLabel(event.date)} · ${event.time}`}</small>
+              <small>{event.isPlanning ? 'Tu voto para el próximo esmorzaret' : `${formatDateLabel(event.date)} · ${event.time}`}</small>
             </div>
 
             <div className="read-only-field">
@@ -174,7 +174,7 @@ export function AttendanceModal({
             <div className="modal-actions">
               <button type="button" className="secondary-btn" onClick={onClose} disabled={isSaving}>Cancelar</button>
               <button type="submit" className="primary-btn" disabled={isSaving || (event.isPlanning && (!preferredPlaceId || !preferredDate))}>
-                {isSaving ? 'Guardando...' : event.isPlanning ? 'Guardar mi elección' : status === 'En blanco' ? 'Eliminar respuesta' : 'Guardar asistencia'}
+                {isSaving ? 'Guardando...' : event.isPlanning ? 'Guardar mi voto' : status === 'En blanco' ? 'Eliminar respuesta' : 'Guardar asistencia'}
               </button>
             </div>
           </form>

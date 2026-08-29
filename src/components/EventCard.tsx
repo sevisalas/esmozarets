@@ -90,8 +90,8 @@ export function EventCard({
           </div>
 
           <div className="event-actions">
-            <button className="primary-action" onClick={onUpdateAttendance}>{event.isPlanning ? 'Elegir lugar y fecha' : '¿Te apuntas?'}</button>
-            <button className="secondary-action" onClick={onViewInscritos}>{event.isPlanning ? 'Ver elecciones' : 'Ver compañeros'}</button>
+            <button className="primary-action" onClick={onUpdateAttendance}>{event.isPlanning ? 'Votar lugar y fecha' : '¿Te apuntas?'}</button>
+            <button className="secondary-action" onClick={onViewInscritos}>{event.isPlanning ? 'Ver votos' : 'Ver compañeros'}</button>
           </div>
 
           {memberNames.length > 0 && (

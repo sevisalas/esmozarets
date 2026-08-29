@@ -25,6 +25,7 @@ export default function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isProposalFormOpen, setIsProposalFormOpen] = useState(false);
+  const [editingProposal, setEditingProposal] = useState<DanceEvent | null>(null);
   const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(() => new Set());
   const [loginName, setLoginName] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -277,13 +278,14 @@ export default function App() {
     }
   };
 
-  const handleCreateProposal = async (proposal: DanceEvent) => {
+  const handleSaveProposal = async (proposal: DanceEvent) => {
     setIsSaving(true);
     try {
-      const result = await addEvent(proposal);
+      const result = editingProposal ? await updateEvent(proposal) : await addEvent(proposal);
       syncState(result);
       setIsProposalFormOpen(false);
-      showTemporaryMessage('Votación abierta');
+      setEditingProposal(null);
+      showTemporaryMessage(editingProposal ? 'Propuesta guardada' : 'Votación abierta');
     } catch (error) {
       setDataSourceError(error);
     } finally {
@@ -545,7 +547,14 @@ export default function App() {
           )}
 
           <section className="proposal-section">
-            {activeProposal ? (
+            {isProposalFormOpen ? (
+              <ProposalForm
+                initialProposal={editingProposal}
+                places={places}
+                onSubmit={handleSaveProposal}
+                onCancel={() => { setIsProposalFormOpen(false); setEditingProposal(null); }}
+              />
+            ) : activeProposal ? (
               <>
                 <p className="eyebrow">Propuesta · votación abierta</p>
                 <EventCard
@@ -561,17 +570,16 @@ export default function App() {
                   onViewInscritos={() => openAttendanceModal(activeProposal, 'view')}
                 />
                 {isAdmin && (
-                  <button className="secondary-action" disabled={isSaving} onClick={() => void handleCloseProposal()}>
-                    Cerrar votación
-                  </button>
+                  <div className="inline-actions">
+                    <button className="secondary-action" disabled={isSaving} onClick={() => { setEditingProposal(activeProposal); setIsProposalFormOpen(true); }}>
+                      Editar propuesta
+                    </button>
+                    <button className="secondary-action" disabled={isSaving} onClick={() => void handleCloseProposal()}>
+                      Cerrar votación
+                    </button>
+                  </div>
                 )}
               </>
-            ) : isProposalFormOpen ? (
-              <ProposalForm
-                places={places}
-                onSubmit={handleCreateProposal}
-                onCancel={() => setIsProposalFormOpen(false)}
-              />
             ) : (
               <article className="next-meetup-placeholder next-meetup-mini">
                 <span>Buscar fecha y lugar para el próximo esmorzaret</span>
