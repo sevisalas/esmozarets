@@ -50,7 +50,7 @@ export function AdminPanel({
   }
 
   const sortedEvents = [...events].filter((event) => !event.isPlanning).sort(compareEvents);
-  const proposals = [...events].filter((event) => event.isPlanning).sort(compareEvents);
+  const closedProposals = [...events].filter((event) => event.isPlanning).sort(compareEvents);
   const sortedMembers = [...members].sort((a, b) => {
     if (a.active !== b.active) {
       return a.active ? -1 : 1;
@@ -81,11 +81,11 @@ export function AdminPanel({
       <div className="admin-grid">
         <div className="admin-card">
           <div className="admin-section-header">
-            <h3>Almuerzos</h3>
+            <h3>Eventos</h3>
             <button className="primary-btn" disabled={isSaving} onClick={() => {
               setEditingEvent(null);
               setIsEventFormOpen((value) => !value);
-            }}>Nueva quedada</button>
+            }}>Nuevo evento</button>
           </div>
           {isEventFormOpen && (
             <EventForm
@@ -107,32 +107,6 @@ export function AdminPanel({
               }}
             />
           )}
-          <h4 className="admin-sublabel">Propuestas en votación (paso previo, todavía no son un evento)</h4>
-          <ul className="list-stack">
-            {proposals.length === 0 && <li className="list-empty">No hay ninguna propuesta abierta.</li>}
-            {proposals.map((event) => (
-              <li key={event.id}>
-                <div>
-                  <strong>{event.title}</strong>
-                  <p>{event.candidatePlaceIds.length} lugares · {event.possibleDates.length} fechas candidatas</p>
-                  <span className={`status-badge ${event.finished ? 'status-no' : event.active ? 'status-yes' : 'status-muted'}`}>
-                    {event.finished ? 'Votación cerrada' : 'Votación abierta'}
-                  </span>
-                </div>
-                <div className="inline-actions">
-                  <button className="secondary-btn" onClick={() => {
-                    setEditingEvent(event);
-                    setIsEventFormOpen(true);
-                  }} disabled={isSaving}>Editar</button>
-                  <button className="secondary-btn" onClick={() => void onUpdateEvent({ ...event, finished: !event.finished })} disabled={isSaving}>
-                    {event.finished ? 'Reabrir' : 'Cerrar votación'}
-                  </button>
-                  <button className="secondary-btn" onClick={() => void onDeleteEvent(event.id)} disabled={isSaving}>Eliminar</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <h4 className="admin-sublabel">Almuerzos con fecha y lugar</h4>
           <ul className="list-stack">
             {sortedEvents.map((event) => (
               <li key={event.id}>
@@ -155,6 +129,30 @@ export function AdminPanel({
                     {event.active ? 'Desactivar' : 'Activar'}
                   </button>
                   <button className="secondary-btn" onClick={() => void onDeleteEvent(event.id)} disabled={isSaving}>Eliminar</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="admin-card">
+          <div className="admin-section-header">
+            <h3>Propuestas cerradas</h3>
+          </div>
+          <p className="admin-copy">Solo para consultar. Una propuesta cerrada no se puede reabrir ni modificar.</p>
+          <ul className="list-stack">
+            {closedProposals.length === 0 && <li className="list-empty">Todavía no hay propuestas cerradas.</li>}
+            {closedProposals.map((proposal) => (
+              <li key={proposal.id}>
+                <div>
+                  <strong>{proposal.title}</strong>
+                  <p>{proposal.candidatePlaceIds.length} sitios · {proposal.possibleDates.length} fechas</p>
+                  <span className={`status-badge ${proposal.finished ? 'status-muted' : 'status-yes'}`}>
+                    {proposal.finished ? 'Cerrada' : 'Abierta'}
+                  </span>
+                </div>
+                <div className="inline-actions">
+                  <button className="secondary-btn" onClick={() => void onDeleteEvent(proposal.id)} disabled={isSaving}>Eliminar</button>
                 </div>
               </li>
             ))}

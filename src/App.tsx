@@ -9,6 +9,7 @@ import { AttendanceModal } from './components/AttendanceModal';
 import { AdminPanel } from './components/AdminPanel';
 import { ProfilePanel } from './components/ProfilePanel';
 import { HelpModal } from './components/HelpModal';
+import { ProposalForm } from './components/ProposalForm';
 
 const MEMBER_STORAGE_KEY = 'alumni_lunch_member_id';
 const showDiagnostics = import.meta.env.VITE_SHOW_DIAGNOSTICS === 'true';
@@ -23,6 +24,7 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isProposalFormOpen, setIsProposalFormOpen] = useState(false);
   const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(() => new Set());
   const [loginName, setLoginName] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -268,6 +270,35 @@ export default function App() {
       const result = await updateEvent(event);
       syncState(result);
       showTemporaryMessage('Almuerzo guardado');
+    } catch (error) {
+      setDataSourceError(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCreateProposal = async (proposal: DanceEvent) => {
+    setIsSaving(true);
+    try {
+      const result = await addEvent(proposal);
+      syncState(result);
+      setIsProposalFormOpen(false);
+      showTemporaryMessage('Votación abierta');
+    } catch (error) {
+      setDataSourceError(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCloseProposal = async () => {
+    if (!activeProposal) return;
+    if (!window.confirm('¿Cerrar la votación? No se podrá reabrir.')) return;
+    setIsSaving(true);
+    try {
+      const result = await updateEvent({ ...activeProposal, finished: true });
+      syncState(result);
+      showTemporaryMessage('Votación cerrada');
     } catch (error) {
       setDataSourceError(error);
     } finally {
@@ -529,11 +560,22 @@ export default function App() {
                   onUpdateAttendance={() => openAttendanceModal(activeProposal, 'edit')}
                   onViewInscritos={() => openAttendanceModal(activeProposal, 'view')}
                 />
+                {isAdmin && (
+                  <button className="secondary-action" disabled={isSaving} onClick={() => void handleCloseProposal()}>
+                    Cerrar votación
+                  </button>
+                )}
               </>
+            ) : isProposalFormOpen ? (
+              <ProposalForm
+                places={places}
+                onSubmit={handleCreateProposal}
+                onCancel={() => setIsProposalFormOpen(false)}
+              />
             ) : (
               <article className="next-meetup-placeholder next-meetup-mini">
                 <span>Buscar fecha y lugar para el próximo esmorzaret</span>
-                {isAdmin && <button className="secondary-action" onClick={() => setIsAdminOpen(true)}>Preparar nueva quedada</button>}
+                {isAdmin && <button className="secondary-action" onClick={() => setIsProposalFormOpen(true)}>Crear propuesta</button>}
               </article>
             )}
           </section>
