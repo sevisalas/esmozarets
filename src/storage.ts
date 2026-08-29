@@ -215,9 +215,10 @@ async function remoteRequest(action?: string, payload?: unknown): Promise<AppDat
 
 export async function loginMember(username: string, password: string): Promise<StorageResult> {
   if (getConfiguredDataSource() === 'local') {
-    const member = getLocalData().members.find((item) => item.username.trim().toLocaleLowerCase() === username.trim().toLocaleLowerCase());
+    const data = getLocalData();
+    const member = data.members.find((item) => item.username.trim().toLocaleLowerCase() === username.trim().toLocaleLowerCase());
     if (!member || member.password !== password) throw new Error('Usuario o clave incorrectos');
-    return createResult(getLocalData(), 'localStorage');
+    return createResult(data, 'localStorage');
   }
   return runBaserow(() => remoteRequest('login', { username, password }));
 }
@@ -350,12 +351,7 @@ export async function deleteEvent(eventId: string): Promise<StorageResult> {
 
 export async function uploadEventImage(file: File): Promise<string> {
   if (getConfiguredDataSource() === 'baserow') {
-    const body = new FormData();
-    body.append('file', file);
-    const response = await fetch('/api/upload', { method: 'POST', body });
-    const result = await response.json() as { url?: string; error?: string };
-    if (!response.ok || !result.url) throw new Error(result.error || 'No se ha podido subir la imagen');
-    return result.url;
+    return readFileAsDataUrl(file);
   }
 
   return readFileAsDataUrl(file);

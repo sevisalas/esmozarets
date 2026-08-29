@@ -266,6 +266,21 @@ h3 {
   white-space: nowrap;
 }
 
+@media (max-width: 620px) {
+  .top-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.4rem;
+  }
+
+  .top-actions button {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+    border: 1px solid var(--color-border);
+  }
+}
+
 .icon-btn {
   min-width: 42px;
   min-height: 42px;
@@ -957,6 +972,20 @@ textarea {
     display: grid;
   }
 
+  .hero-overlay {
+    padding: 12px 14px;
+  }
+
+  .hero-overlay h1 {
+    font-size: 1.35rem;
+    margin-bottom: 3px;
+  }
+
+  .hero-overlay .hero-copy {
+    font-size: 0.82rem;
+    margin-top: 18px;
+  }
+
   .session-actions {
     justify-content: stretch;
   }
@@ -976,8 +1005,10 @@ textarea {
   }
 
   .top-actions .admin-link-btn,
+  .top-actions .session-link-btn,
   .top-actions .expand-button {
     width: auto;
+    flex: 0 0 auto;
   }
 
   .event-actions {

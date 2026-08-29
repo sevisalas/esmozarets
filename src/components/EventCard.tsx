@@ -29,12 +29,14 @@ export function EventCard({
   const memberNames = attendances
     .map((attendance) => members.find((member) => member.id === attendance.memberId)?.name)
     .filter(Boolean) as string[];
-  const shouldShowPoster = Boolean(event.imageUrl) && !hasPosterError;
+  const placeImageUrl = places.find((place) => place.id === event.placeId)?.imageUrl ?? '';
+  const posterUrl = event.imageUrl || placeImageUrl;
+  const shouldShowPoster = Boolean(posterUrl) && !hasPosterError;
   const candidatePlaces = event.candidatePlaceIds.map((id) => places.find((place) => place.id === id)?.name).filter(Boolean);
 
   useEffect(() => {
     setHasPosterError(false);
-  }, [event.imageUrl]);
+  }, [posterUrl]);
 
   if (!isExpanded) {
     return (
@@ -109,7 +111,7 @@ export function EventCard({
         {shouldShowPoster && (
           <div className="event-poster">
             <img
-              src={event.imageUrl}
+              src={posterUrl}
               alt={`Imagen de ${event.title}`}
               onError={() => setHasPosterError(true)}
             />

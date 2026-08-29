@@ -1,4 +1,4 @@
-import type { AppData, Attendance, AttendanceStatus, DanceEvent, Member, Place } from '../types';
+import type { AppData, Attendance, AttendanceStatus, DanceEvent, Member, Place } from '../types.js';
 
 interface BaserowListResponse<T> {
   next: string | null;
@@ -20,12 +20,15 @@ interface BaserowEventRow {
   imageUrl?: string | null;
   ImageUrl?: string | null;
   Imagen?: string | null;
-  imagen?: string | null;
+  imagen?: string | null | Array<{ url?: string; name?: string }>;
   cartel?: string | null;
   Cartel?: string | null;
   active?: boolean;
   finished?: boolean;
   createdAt?: string;
+  titulo?: string; fecha?: string; hora?: string; lugar_id?: Array<{ id: number }>;
+  es_votacion?: boolean; lugares_candidatos?: Array<{ id: number }>; fechas_posibles?: string;
+  notas?: string; activo?: boolean; finalizado?: boolean; fecha_creacion?: string;
 }
 
 interface BaserowMemberRow {
@@ -48,6 +51,7 @@ interface BaserowMemberRow {
   contraseña?: string | null;
   Contraseña?: string | null;
   createdAt?: string;
+  activo?: boolean; administrador?: boolean; fecha_creacion?: string;
 }
 
 interface BaserowAttendanceRow {
@@ -60,6 +64,8 @@ interface BaserowAttendanceRow {
   comment?: string;
   updatedAt?: string;
   uniqueKey?: string;
+  evento_id?: string; miembro_id?: Array<{ id: number }>; estado?: string | { value?: string }; lugar_preferido_id?: Array<{ id: number }>;
+  fecha_preferida?: string; comentario?: string; fecha_actualizacion?: string;
 }
 
 interface BaserowPlaceRow {
@@ -70,6 +76,7 @@ interface BaserowPlaceRow {
   imageUrl?: string | null;
   active?: boolean;
   createdAt?: string;
+  nombre?: string; direccion?: string; notas?: string; imagen?: Array<{ url?: string; name?: string }>; activo?: boolean; fecha_creacion?: string;
 }
 
 interface BaserowFileUploadResponse {
@@ -78,14 +85,35 @@ interface BaserowFileUploadResponse {
 }
 
 const VALID_ATTENDANCE_STATUSES: AttendanceStatus[] = ['Sí', 'No', 'Quizás'];
+const EVENT_META_PREFIX = '__ESM_META__';
+const PLACE_PREFIX = '__ESM_PLACE__';
 
+function parseMeta(value: string | undefined): Record<string, unknown> | null {
+  if (!value?.startsWith(EVENT_META_PREFIX)) return null;
+  try { return JSON.parse(value.slice(EVENT_META_PREFIX.length)) as Record<string, unknown>; } catch { return null; }
+}
+
+// Lee una lista de textos guardada como JSON (p. ej. fechas_posibles en un campo de texto largo).
+function parseStringArray(value: unknown): string[] | null {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.map(String) : null;
+  } catch {
+    return null;
+  }
+}
+
+const serverEnv = (globalThis as typeof globalThis & { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+const viteEnv = ((import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env) ?? {};
 const config = {
-  apiUrl: (import.meta.env.VITE_BASEROW_API_URL as string | undefined) || 'https://api.baserow.io',
-  token: import.meta.env.VITE_BASEROW_TOKEN as string | undefined,
-  eventsTableId: import.meta.env.VITE_BASEROW_EVENTS_TABLE_ID as string | undefined,
-  membersTableId: import.meta.env.VITE_BASEROW_MEMBERS_TABLE_ID as string | undefined,
-  attendanceTableId: import.meta.env.VITE_BASEROW_ATTENDANCE_TABLE_ID as string | undefined,
-  placesTableId: import.meta.env.VITE_BASEROW_PLACES_TABLE_ID as string | undefined,
+  apiUrl: viteEnv.VITE_BASEROW_API_URL || serverEnv.VITE_BASEROW_API_URL || 'https://api.baserow.io',
+  token: viteEnv.VITE_BASEROW_TOKEN || serverEnv.BASEROW_TOKEN,
+  eventsTableId: viteEnv.VITE_BASEROW_EVENTS_TABLE_ID || serverEnv.VITE_BASEROW_EVENTS_TABLE_ID,
+  membersTableId: viteEnv.VITE_BASEROW_MEMBERS_TABLE_ID || serverEnv.VITE_BASEROW_MEMBERS_TABLE_ID,
+  attendanceTableId: viteEnv.VITE_BASEROW_ATTENDANCE_TABLE_ID || serverEnv.VITE_BASEROW_ATTENDANCE_TABLE_ID,
+  placesTableId: viteEnv.VITE_BASEROW_PLACES_TABLE_ID || serverEnv.VITE_BASEROW_PLACES_TABLE_ID,
 };
 
 function requireConfig() {
@@ -182,29 +210,31 @@ async function listRows<T>(tableId: string): Promise<T[]> {
 }
 
 function eventFromRow(row: BaserowEventRow): DanceEvent {
-  const imageUrl = row.imageUrl ?? row.ImageUrl ?? row.Imagen ?? row.imagen ?? row.cartel ?? row.Cartel ?? '';
+  const spanishImage = Array.isArray(row.imagen) ? row.imagen[0]?.url : row.imagen;
+  const imageUrl = spanishImage ?? row.imageUrl ?? row.ImageUrl ?? row.Imagen ?? row.cartel ?? row.Cartel ?? '';
+  const meta = parseMeta(row.notes);
 
   return {
     id: String(row.id),
-    title: row.title ?? '',
-    date: row.date ?? '',
-    time: row.time ?? '',
+    title: row.titulo ?? row.title ?? '',
+    date: row.fecha ?? row.date ?? '',
+    time: row.hora ?? row.time ?? '',
     location: row.location ?? '',
-    placeId: row.placeId ?? '',
-    isPlanning: row.isPlanning ?? false,
-    candidatePlaceIds: JSON.parse(row.candidatePlaceIds || '[]'),
-    possibleDates: JSON.parse(row.possibleDates || '[]'),
+    placeId: row.lugar_id?.[0] ? String(row.lugar_id[0].id) : (row.placeId ?? String(meta?.placeId ?? '')),
+    isPlanning: row.es_votacion ?? row.isPlanning ?? Boolean(meta?.isPlanning),
+    candidatePlaceIds: row.lugares_candidatos?.map((item) => String(item.id)) ?? (row.candidatePlaceIds ? JSON.parse(row.candidatePlaceIds) : (Array.isArray(meta?.candidatePlaceIds) ? meta.candidatePlaceIds as string[] : [])),
+    possibleDates: parseStringArray(row.fechas_posibles) ?? parseStringArray(row.possibleDates) ?? (Array.isArray(meta?.possibleDates) ? meta.possibleDates as string[] : []),
     clothingRequired: row.clothingRequired ?? false,
-    notes: row.notes ?? '',
+    notes: row.notas ?? (meta ? String(meta.notes ?? '') : (row.notes ?? '')),
     imageUrl: normalizeBaserowFileUrl(String(imageUrl || '')),
-    active: row.active ?? true,
-    finished: row.finished ?? false,
-    createdAt: row.createdAt ?? '',
+    active: row.activo ?? row.active ?? true,
+    finished: row.finalizado ?? row.finished ?? false,
+    createdAt: row.fecha_creacion ?? row.createdAt ?? '',
   };
 }
 
 function getMemberPassword(row: BaserowMemberRow): string {
-  const password = row.Clave ?? row.clave ?? row.password ?? row.Password ?? row.contraseña ?? row.Contraseña ?? '';
+  const password = row.clave ?? row.Clave ?? row.password ?? row.Password ?? row.contraseña ?? row.Contraseña ?? '';
   return String(password).trim();
 }
 
@@ -214,7 +244,7 @@ function getMemberUsername(row: BaserowMemberRow): string {
 }
 
 function getMemberDisplayName(row: BaserowMemberRow): string {
-  const name = row.nombre_a_mostrar ?? row.Nombre_a_mostrar ?? row.nombre ?? row.Nombre ?? row.name ?? '';
+  const name = row.nombre ?? row.nombre_a_mostrar ?? row.Nombre_a_mostrar ?? row.Nombre ?? row.name ?? '';
   return String(name).trim();
 }
 
@@ -223,13 +253,13 @@ function memberFromRow(row: BaserowMemberRow): Member {
     id: String(row.id),
     username: getMemberUsername(row),
     name: getMemberDisplayName(row),
-    active: row.active ?? true,
-    isAdmin: row.Admin ?? row.admin ?? row.isAdmin ?? false,
+    active: row.activo ?? row.active ?? true,
+    isAdmin: row.administrador ?? row.Admin ?? row.admin ?? row.isAdmin ?? false,
     password: getMemberPassword(row),
-    createdAt: row.createdAt ?? '',
+    createdAt: row.fecha_creacion ?? row.createdAt ?? '',
   };
 
-  if (import.meta.env.DEV) {
+  if (viteEnv.DEV) {
     console.log('Login member loaded', {
       id: member.id,
       username: member.username,
@@ -245,61 +275,78 @@ function memberFromRow(row: BaserowMemberRow): Member {
 }
 
 function attendanceFromRow(row: BaserowAttendanceRow): Attendance | null {
-  if (!VALID_ATTENDANCE_STATUSES.includes(row.status as AttendanceStatus)) {
+  const spanishStatus = typeof row.estado === 'object' ? row.estado.value : row.estado;
+  const rawStatus = spanishStatus === 'Confirmado' ? 'Sí'
+    : spanishStatus === 'Cancelado' ? 'No'
+      : spanishStatus === 'Pendiente' ? 'Quizás'
+        : (spanishStatus ?? row.status);
+  if (!VALID_ATTENDANCE_STATUSES.includes(rawStatus as AttendanceStatus)) {
     return null;
   }
 
+  const meta = parseMeta(row.comment);
   return {
     id: String(row.id),
-    eventId: row.eventId ?? '',
-    memberId: row.memberId ?? '',
-    status: row.status as AttendanceStatus,
-    preferredPlaceId: row.preferredPlaceId ?? '',
-    preferredDate: row.preferredDate ?? '',
-    comment: row.comment ?? '',
-    updatedAt: row.updatedAt ?? '',
+    eventId: row.evento_id ?? row.eventId ?? '',
+    memberId: row.miembro_id?.[0] ? String(row.miembro_id[0].id) : (row.memberId ?? ''),
+    status: rawStatus as AttendanceStatus,
+    preferredPlaceId: row.preferredPlaceId ?? String(meta?.preferredPlaceId ?? ''),
+    preferredDate: row.preferredDate ?? String(meta?.preferredDate ?? ''),
+    comment: row.comentario ?? (meta ? String(meta.comment ?? '') : (row.comment ?? '')),
+    updatedAt: row.fecha_actualizacion ?? row.updatedAt ?? '',
   };
 }
 
 function placeFromRow(row: BaserowPlaceRow): Place {
   return {
     id: String(row.id),
-    name: row.name ?? '',
-    address: row.address ?? '',
-    notes: row.notes ?? '',
-    imageUrl: normalizeBaserowFileUrl(String(row.imageUrl || '')),
-    active: row.active ?? true,
-    createdAt: row.createdAt ?? '',
+    name: row.nombre ?? row.name ?? '',
+    address: row.direccion ?? row.address ?? '',
+    notes: row.notas ?? row.notes ?? '',
+    imageUrl: normalizeBaserowFileUrl(String(row.imagen?.[0]?.url ?? row.imageUrl ?? '')),
+    active: row.activo ?? row.active ?? true,
+    createdAt: row.fecha_creacion ?? row.createdAt ?? '',
   };
 }
 
 function eventToPayload(event: DanceEvent) {
+  // Baserow rechaza "" en campos de fecha: hay que enviar null.
   return {
-    title: event.title,
-    date: event.date,
-    time: event.time,
-    location: event.location,
-    placeId: event.placeId,
-    isPlanning: event.isPlanning,
-    candidatePlaceIds: JSON.stringify(event.candidatePlaceIds),
-    possibleDates: JSON.stringify(event.possibleDates),
-    clothingRequired: event.clothingRequired,
-    notes: event.notes,
-    imageUrl: event.imageUrl || '',
-    active: event.active,
-    finished: event.finished,
-    createdAt: event.createdAt,
+    titulo: event.title,
+    fecha: event.date || null,
+    hora: event.time || '',
+    lugar_id: event.placeId ? [Number(event.placeId)] : [],
+    es_votacion: event.isPlanning,
+    lugares_candidatos: event.candidatePlaceIds.map(Number),
+    fechas_posibles: JSON.stringify(event.possibleDates ?? []),
+    notas: event.notes,
+    activo: event.active,
+    finalizado: event.finished,
+    fecha_creacion: (event.createdAt || new Date().toISOString()).slice(0, 10),
   };
+}
+
+async function imageFieldPayload(imageUrl: string, fallbackName: string): Promise<Array<{ name: string }> | undefined> {
+  if (!imageUrl) return [];
+  const match = imageUrl.match(/^data:([^;]+);base64,(.*)$/s);
+  if (!match) return undefined;
+  const extension = (match[1].split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+  const bytes = Uint8Array.from(atob(match[2]), (character) => character.charCodeAt(0));
+  const body = new FormData();
+  body.append('file', new Blob([bytes], { type: match[1] }), `${fallbackName}.${extension}`);
+  const uploaded = await baserowUploadFetch<BaserowFileUploadResponse>(userFileUploadUrl(), body);
+  if (!uploaded.name) throw new Error('Baserow no ha devuelto el nombre de la imagen subida');
+  return [{ name: uploaded.name }];
 }
 
 function memberToPayload(member: Member) {
   return {
     usuario: member.username,
-    nombre_a_mostrar: member.name,
-    active: member.active,
-    Admin: member.isAdmin,
-    Clave: member.password,
-    createdAt: member.createdAt,
+    nombre: member.name,
+    activo: member.active,
+    administrador: member.isAdmin,
+    clave: member.password,
+    fecha_creacion: (member.createdAt || new Date().toISOString()).slice(0, 10),
   };
 }
 
@@ -313,21 +360,23 @@ function isBaserowRowId(id: string): boolean {
 
 function attendanceToPayload(attendance: Attendance) {
   return {
-    eventId: attendance.eventId,
-    memberId: attendance.memberId,
-    status: attendance.status,
-    preferredPlaceId: attendance.preferredPlaceId,
-    preferredDate: attendance.preferredDate,
-    comment: attendance.comment,
-    updatedAt: attendance.updatedAt,
-    uniqueKey: attendanceUniqueKey(attendance.eventId, attendance.memberId),
+    evento_id: attendance.eventId,
+    miembro_id: [Number(attendance.memberId)],
+    estado: attendance.status === 'Sí' ? 'Confirmado' : attendance.status === 'No' ? 'Cancelado' : 'Pendiente',
+    lugar_preferido_id: attendance.preferredPlaceId ? [Number(attendance.preferredPlaceId)] : [],
+    fecha_preferida: attendance.preferredDate || null,
+    comentario: attendance.comment,
+    fecha_actualizacion: (attendance.updatedAt || new Date().toISOString()).slice(0, 10),
   };
 }
 
 async function findAttendanceRow(eventId: string, memberId: string): Promise<BaserowAttendanceRow | null> {
-  const uniqueKey = attendanceUniqueKey(eventId, memberId);
   const rows = await listRows<BaserowAttendanceRow>(config.attendanceTableId as string);
-  return rows.find((row) => row.uniqueKey === uniqueKey) ?? null;
+  return rows.find((row) => {
+    const rowMemberId = row.miembro_id?.[0] ? String(row.miembro_id[0].id) : row.memberId;
+    const rowEventId = row.evento_id ?? row.eventId;
+    return rowMemberId === memberId && rowEventId === eventId;
+  }) ?? null;
 }
 
 export async function getAllData(): Promise<AppData> {
@@ -340,41 +389,54 @@ export async function getAllData(): Promise<AppData> {
     config.placesTableId ? listRows<BaserowPlaceRow>(config.placesTableId) : Promise.resolve([]),
   ]);
 
+  const embeddedPlaces = eventRows.filter((row) => row.title?.startsWith(PLACE_PREFIX)).map((row) => ({
+    id: String(row.id), name: String(row.title).slice(PLACE_PREFIX.length), address: row.location ?? '',
+    notes: String(parseMeta(row.notes)?.notes ?? ''), imageUrl: normalizeBaserowFileUrl(String(row.imageUrl ?? '')),
+    active: row.active ?? true, createdAt: row.createdAt ?? '',
+  }));
+  const events = eventRows.filter((row) => !row.title?.startsWith(PLACE_PREFIX)).map(eventFromRow).filter((event) => event.title);
+  const attendances = attendanceRows.map(attendanceFromRow).filter((attendance): attendance is Attendance => Boolean(attendance));
+  for (const attendance of attendances) {
+    const eventByTitle = events.find((event) => event.title === attendance.eventId);
+    if (eventByTitle) attendance.eventId = eventByTitle.id;
+  }
   return {
-    events: eventRows.map(eventFromRow).filter((event) => event.title),
+    events,
     members: memberRows.map(memberFromRow).filter((member) => member.username && member.name),
-    attendances: attendanceRows
-      .map(attendanceFromRow)
-      .filter((attendance): attendance is Attendance => Boolean(attendance)),
-    places: placeRows.map(placeFromRow).filter((place) => place.name),
+    attendances,
+    places: [...placeRows.map(placeFromRow), ...embeddedPlaces].filter((place) => place.name),
   };
 }
 
 export async function savePlace(place: Place): Promise<AppData> {
-  if (!config.placesTableId) {
-    throw new Error('Falta configurar VITE_BASEROW_PLACES_TABLE_ID');
-  }
-
-  const payload = {
-    name: place.name,
-    address: place.address,
-    notes: place.notes,
-    imageUrl: place.imageUrl || '',
-    active: place.active,
-    createdAt: place.createdAt,
+  const placeImage = await imageFieldPayload(place.imageUrl, `lugar-${place.name}`);
+  const payload = config.placesTableId ? {
+    nombre: place.name,
+    direccion: place.address,
+    notas: place.notes,
+    ...(placeImage !== undefined ? { imagen: placeImage } : {}),
+    activo: place.active,
+    fecha_creacion: (place.createdAt || new Date().toISOString()).slice(0, 10),
+  } : {
+    title: `${PLACE_PREFIX}${place.name}`, date: '2100-01-01', time: '', location: place.address,
+    clothingRequired: false, notes: `${EVENT_META_PREFIX}${JSON.stringify({ notes: place.notes })}`,
+    imageUrl: place.imageUrl || '', active: place.active, finished: true, createdAt: place.createdAt,
   };
 
+  const targetTable = config.placesTableId || config.eventsTableId as string;
+
   if (place.id && isBaserowRowId(place.id)) {
-    await baserowFetch<BaserowPlaceRow>(tableUrl(config.placesTableId, place.id), { method: 'PATCH', body: JSON.stringify(payload) });
+    await baserowFetch<BaserowPlaceRow>(tableUrl(targetTable, place.id), { method: 'PATCH', body: JSON.stringify(payload) });
   } else {
-    await baserowFetch<BaserowPlaceRow>(tableUrl(config.placesTableId), { method: 'POST', body: JSON.stringify(payload) });
+    await baserowFetch<BaserowPlaceRow>(tableUrl(targetTable), { method: 'POST', body: JSON.stringify(payload) });
   }
 
   return getAllData();
 }
 
 export async function saveEvent(event: DanceEvent): Promise<AppData> {
-  const payload = eventToPayload(event);
+  const eventImage = await imageFieldPayload(event.imageUrl, `evento-${event.title}`);
+  const payload = { ...eventToPayload(event), ...(eventImage !== undefined ? { imagen: eventImage } : {}) };
 
   if (event.id && isBaserowRowId(event.id)) {
     await baserowFetch<BaserowEventRow>(tableUrl(config.eventsTableId as string, event.id), {

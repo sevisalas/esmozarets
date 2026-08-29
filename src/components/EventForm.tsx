@@ -82,10 +82,15 @@ export function EventForm({ initialEvent, onSubmit, onUploadImage, onCancel, pla
       <h3>{initialEvent ? 'Editar almuerzo' : event.isPlanning ? 'Nueva quedada' : 'Crear almuerzo'}</h3>
       <label>
         Tipo
-        <select value={event.isPlanning ? 'propuesta' : 'confirmado'} onChange={(e) => setEvent({ ...event, isPlanning: e.target.value === 'propuesta' })}>
+        <select
+          value={event.isPlanning ? 'propuesta' : 'confirmado'}
+          disabled={Boolean(initialEvent)}
+          onChange={(e) => setEvent({ ...event, isPlanning: e.target.value === 'propuesta' })}
+        >
           <option value="propuesta">Quedada por decidir</option>
           <option value="confirmado">Almuerzo con fecha y lugar decididos</option>
         </select>
+        {initialEvent && <span className="form-hint">El tipo no se puede cambiar en un evento ya creado.</span>}
       </label>
       <label>
         Título

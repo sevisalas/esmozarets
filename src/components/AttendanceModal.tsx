@@ -68,7 +68,7 @@ export function AttendanceModal({
       id: attendances.find((attendance) => attendance.memberId === currentMember.id)?.id ?? crypto.randomUUID(),
       eventId: event.id,
       memberId: currentMember.id,
-      status: event.isPlanning ? 'Sí' : status,
+      status: event.isPlanning ? 'Sí' : status as Attendance['status'],
       preferredPlaceId,
       preferredDate,
       comment,

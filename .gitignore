@@ -1,9 +1,6 @@
 node_modules/
 dist/
-.next/
-.vinext/
 .vite/
-.wrangler/
 
 .env
 .env.local
@@ -11,3 +8,6 @@ dist/
 
 *.tsbuildinfo
 .DS_Store
+.vercel
+
+.claude/
