@@ -27,7 +27,8 @@ export function isEventPending(event: DanceEvent, today = new Date()): boolean {
     return false;
   }
 
-  const parsedEventDate = parseIsoDate(event.date);
+  const candidateDate = event.isPlanning ? [...event.possibleDates].sort()[0] : event.date;
+  const parsedEventDate = parseIsoDate(candidateDate);
   if (!parsedEventDate) {
     return false;
   }
@@ -44,7 +45,8 @@ export function compareEvents(a: DanceEvent, b: DanceEvent): number {
 }
 
 export function getEventDateTime(event: DanceEvent): Date {
-  const dateTime = new Date(`${event.date}T${event.time || '00:00'}:00`);
+  const date = event.isPlanning ? [...event.possibleDates].sort()[0] : event.date;
+  const dateTime = new Date(`${date}T${event.time || '00:00'}:00`);
   return Number.isNaN(dateTime.getTime()) ? new Date(0) : dateTime;
 }
 

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { Attendance, DanceEvent, Member } from '../types';
+import type { Attendance, DanceEvent, Member, Place } from '../types';
 import { formatDateLabel, formatStatus, getAttendanceSummary } from '../utils';
 
 interface EventCardProps {
   event: DanceEvent;
   attendances: Attendance[];
   members: Member[];
+  places: Place[];
   summary: ReturnType<typeof getAttendanceSummary>;
   isExpanded: boolean;
   onToggleExpanded: () => void;
@@ -17,6 +18,7 @@ export function EventCard({
   event,
   attendances,
   members,
+  places,
   summary,
   isExpanded,
   onToggleExpanded,
@@ -28,6 +30,7 @@ export function EventCard({
     .map((attendance) => members.find((member) => member.id === attendance.memberId)?.name)
     .filter(Boolean) as string[];
   const shouldShowPoster = Boolean(event.imageUrl) && !hasPosterError;
+  const candidatePlaces = event.candidatePlaceIds.map((id) => places.find((place) => place.id === id)?.name).filter(Boolean);
 
   useEffect(() => {
     setHasPosterError(false);
@@ -38,11 +41,11 @@ export function EventCard({
       <article className="event-card event-card-collapsed">
         <div className="event-collapsed-summary">
           <p className="collapsed-meta">
-            {[formatDateLabel(event.date), event.time, event.location].filter(Boolean).join(' · ')}
+            {event.isPlanning ? 'Quedada por decidir' : [formatDateLabel(event.date), event.time, event.location].filter(Boolean).join(' · ')}
           </p>
           <h2 className="collapsed-title">{event.title}</h2>
           <p className="collapsed-status">
-            {event.clothingRequired ? 'Reserva cerrada' : 'Reserva abierta'} · {summary.yes} se apuntan
+            {event.isPlanning ? `${event.possibleDates.length} fechas · ${candidatePlaces.length} lugares candidatos` : `${event.clothingRequired ? 'Reserva cerrada' : 'Reserva abierta'} · ${summary.yes} se apuntan`}
           </p>
         </div>
 
@@ -59,16 +62,22 @@ export function EventCard({
         <div className="event-main">
           <div className="event-card-header">
             <div>
-              <p className="event-date">{formatDateLabel(event.date)} · {event.time}</p>
+              <p className="event-date">{event.isPlanning ? 'Fecha y lugar por decidir' : `${formatDateLabel(event.date)} · ${event.time}`}</p>
               <h2>{event.title}</h2>
-              <p className="event-place">{event.location}</p>
+              {!event.isPlanning && <p className="event-place">{event.location}</p>}
             </div>
-            <span className={`pill ${event.clothingRequired ? 'pill-yes' : 'pill-no'}`}>
-              {event.clothingRequired ? 'Reserva confirmada' : 'Pendiente de reservar'}
+            <span className={`pill ${!event.isPlanning && event.clothingRequired ? 'pill-yes' : 'pill-no'}`}>
+              {event.isPlanning ? 'En propuesta' : event.clothingRequired ? 'Reserva confirmada' : 'Pendiente de reservar'}
             </span>
           </div>
 
           <div className="event-meta">
+            {event.isPlanning && (
+              <>
+                <p><strong>Lugares candidatos:</strong> {candidatePlaces.join(', ') || 'Pendientes'}</p>
+                <p><strong>Posibles fechas:</strong> {event.possibleDates.map(formatDateLabel).join(', ') || 'Pendientes'}</p>
+              </>
+            )}
             <p><strong>Sobre el almuerzo:</strong> {event.notes || 'Todavía no hay más detalles.'}</p>
           </div>
 

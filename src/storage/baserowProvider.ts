@@ -12,6 +12,9 @@ interface BaserowEventRow {
   time?: string;
   location?: string;
   placeId?: string;
+  isPlanning?: boolean;
+  candidatePlaceIds?: string;
+  possibleDates?: string;
   clothingRequired?: boolean;
   notes?: string;
   imageUrl?: string | null;
@@ -186,6 +189,9 @@ function eventFromRow(row: BaserowEventRow): DanceEvent {
     time: row.time ?? '',
     location: row.location ?? '',
     placeId: row.placeId ?? '',
+    isPlanning: row.isPlanning ?? false,
+    candidatePlaceIds: JSON.parse(row.candidatePlaceIds || '[]'),
+    possibleDates: JSON.parse(row.possibleDates || '[]'),
     clothingRequired: row.clothingRequired ?? false,
     notes: row.notes ?? '',
     imageUrl: normalizeBaserowFileUrl(String(imageUrl || '')),
@@ -270,6 +276,9 @@ function eventToPayload(event: DanceEvent) {
     time: event.time,
     location: event.location,
     placeId: event.placeId,
+    isPlanning: event.isPlanning,
+    candidatePlaceIds: JSON.stringify(event.candidatePlaceIds),
+    possibleDates: JSON.stringify(event.possibleDates),
     clothingRequired: event.clothingRequired,
     notes: event.notes,
     imageUrl: event.imageUrl || '',

@@ -16,6 +16,9 @@ const emptyEvent = (): DanceEvent => ({
   time: '',
   location: '',
   placeId: '',
+  isPlanning: true,
+  candidatePlaceIds: [],
+  possibleDates: [],
   clothingRequired: false,
   notes: '',
   imageUrl: '',
@@ -28,6 +31,7 @@ export function EventForm({ initialEvent, onSubmit, onUploadImage, onCancel, pla
   const [event, setEvent] = useState<DanceEvent>(emptyEvent());
   const [imageUploadMessage, setImageUploadMessage] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [newPossibleDate, setNewPossibleDate] = useState('');
 
   useEffect(() => {
     if (initialEvent) {
@@ -75,20 +79,27 @@ export function EventForm({ initialEvent, onSubmit, onUploadImage, onCancel, pla
 
   return (
     <form className="form-card" onSubmit={handleSubmit}>
-      <h3>{initialEvent ? 'Editar almuerzo' : 'Crear almuerzo'}</h3>
+      <h3>{initialEvent ? 'Editar almuerzo' : event.isPlanning ? 'Nueva quedada' : 'Crear almuerzo'}</h3>
+      <label>
+        Tipo
+        <select value={event.isPlanning ? 'propuesta' : 'confirmado'} onChange={(e) => setEvent({ ...event, isPlanning: e.target.value === 'propuesta' })}>
+          <option value="propuesta">Quedada por decidir</option>
+          <option value="confirmado">Almuerzo con fecha y lugar decididos</option>
+        </select>
+      </label>
       <label>
         Título
         <input value={event.title} onChange={(e) => setEvent({ ...event, title: e.target.value })} required />
       </label>
-      <label>
+      {!event.isPlanning && <label>
         Fecha
         <input type="date" value={event.date} onChange={(e) => setEvent({ ...event, date: e.target.value })} required />
-      </label>
+      </label>}
       <label>
         Hora
         <input type="time" value={event.time} onChange={(e) => setEvent({ ...event, time: e.target.value })} required />
       </label>
-      <label>
+      {!event.isPlanning && <label>
         Lugar
         {places.length > 0 ? (
           <select
@@ -107,7 +118,40 @@ export function EventForm({ initialEvent, onSubmit, onUploadImage, onCancel, pla
         ) : (
           <input value={event.location} onChange={(e) => setEvent({ ...event, location: e.target.value, placeId: '' })} required />
         )}
-      </label>
+      </label>}
+      {event.isPlanning && (
+        <fieldset className="candidate-options">
+          <legend>Lugares candidatos</legend>
+          {places.filter((place) => place.active).map((place) => (
+            <label className="checkbox-field" key={place.id}>
+              <input type="checkbox" checked={event.candidatePlaceIds.includes(place.id)} onChange={(e) => setEvent({
+                ...event,
+                candidatePlaceIds: e.target.checked ? [...event.candidatePlaceIds, place.id] : event.candidatePlaceIds.filter((id) => id !== place.id),
+              })} />
+              {place.name}{place.address ? ` · ${place.address}` : ''}
+            </label>
+          ))}
+          {places.length === 0 && <p className="form-hint">Crea primero algún lugar en el listado de lugares.</p>}
+        </fieldset>
+      )}
+      {event.isPlanning && (
+        <div className="candidate-options">
+          <strong>Posibles fechas</strong>
+          <div className="inline-actions">
+            <input type="date" value={newPossibleDate} onChange={(e) => setNewPossibleDate(e.target.value)} />
+            <button type="button" className="secondary-btn" disabled={!newPossibleDate} onClick={() => {
+              setEvent({ ...event, possibleDates: Array.from(new Set([...event.possibleDates, newPossibleDate])).sort() });
+              setNewPossibleDate('');
+            }}>Añadir fecha</button>
+          </div>
+          {event.possibleDates.map((date) => (
+            <div className="candidate-date" key={date}>
+              <span>{new Date(`${date}T12:00:00`).toLocaleDateString('es-ES')}</span>
+              <button type="button" className="secondary-btn" onClick={() => setEvent({ ...event, possibleDates: event.possibleDates.filter((item) => item !== date) })}>Quitar</button>
+            </div>
+          ))}
+        </div>
+      )}
       <label>
         Estado de la reserva
         <select value={event.clothingRequired ? 'Sí' : 'No'} onChange={(e) => setEvent({ ...event, clothingRequired: e.target.value === 'Sí' })}>
@@ -156,8 +200,8 @@ export function EventForm({ initialEvent, onSubmit, onUploadImage, onCancel, pla
       </label>
       <div className="modal-actions">
         {onCancel && <button type="button" className="secondary-btn" onClick={onCancel}>Cancelar</button>}
-        <button type="submit" className="primary-btn" disabled={isUploadingImage}>
-          {isUploadingImage ? 'Subiendo imagen...' : 'Guardar almuerzo'}
+        <button type="submit" className="primary-btn" disabled={isUploadingImage || (event.isPlanning && (!event.candidatePlaceIds.length || !event.possibleDates.length))}>
+          {isUploadingImage ? 'Subiendo imagen...' : event.isPlanning ? 'Guardar quedada' : 'Guardar almuerzo'}
         </button>
       </div>
     </form>

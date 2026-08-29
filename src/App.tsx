@@ -523,6 +523,7 @@ export default function App() {
                     event={event}
                     attendances={eventAttendances}
                     members={members}
+                    places={places}
                     summary={summary}
                     isExpanded={expandedEventIds.has(event.id)}
                     onToggleExpanded={() => toggleEventExpanded(event.id)}

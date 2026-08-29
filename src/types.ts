@@ -18,6 +18,9 @@ export interface DanceEvent {
   time: string;
   location: string;
   placeId: string;
+  isPlanning: boolean;
+  candidatePlaceIds: string[];
+  possibleDates: string[];
   clothingRequired: boolean;
   notes: string;
   imageUrl: string;

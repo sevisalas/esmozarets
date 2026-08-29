@@ -102,7 +102,7 @@ export function AdminPanel({
             <button className="primary-btn" disabled={isSaving} onClick={() => {
               setEditingEvent(null);
               setIsEventFormOpen((value) => !value);
-            }}>Nuevo almuerzo</button>
+            }}>Nueva quedada</button>
           </div>
           {isEventFormOpen && (
             <EventForm
