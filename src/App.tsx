@@ -477,32 +477,6 @@ export default function App() {
 
       {isAuthenticated && !isAdminOpen && !isProfileOpen && (
         <main className="content-stack">
-          <section className="proposal-section">
-            <p className="eyebrow">Antes de nada · votación</p>
-            {activeProposal ? (
-              <EventCard
-                key={activeProposal.id}
-                event={activeProposal}
-                attendances={attendances.filter((attendance) => attendance.eventId === activeProposal.id)}
-                members={members}
-                places={places}
-                summary={getAttendanceSummary(attendances.filter((attendance) => attendance.eventId === activeProposal.id))}
-                isExpanded
-                onToggleExpanded={() => toggleEventExpanded(activeProposal.id)}
-                onUpdateAttendance={() => openAttendanceModal(activeProposal, 'edit')}
-                onViewInscritos={() => openAttendanceModal(activeProposal, 'view')}
-              />
-            ) : (
-              <article className="event-card next-meetup-placeholder">
-                <div>
-                  <h2>Aún no hay ninguna quedada en votación</h2>
-                  <p className="event-place">La propuesta es el paso previo: se vota lugar y fecha antes de fijar el esmorzaret.</p>
-                </div>
-                {isAdmin && <button className="primary-action" onClick={() => setIsAdminOpen(true)}>Preparar votación</button>}
-              </article>
-            )}
-          </section>
-
           {pendingEvents.length === 0 ? (
             <div className="empty-state empty-state-panel">
               <span className="empty-icon" aria-hidden="true">🍽</span>
@@ -537,6 +511,24 @@ export default function App() {
                 );
               })}
             </>
+          )}
+
+          {activeProposal && (
+            <section className="proposal-section">
+              <p className="eyebrow">Propuesta · votación abierta</p>
+              <EventCard
+                key={activeProposal.id}
+                event={activeProposal}
+                attendances={attendances.filter((attendance) => attendance.eventId === activeProposal.id)}
+                members={members}
+                places={places}
+                summary={getAttendanceSummary(attendances.filter((attendance) => attendance.eventId === activeProposal.id))}
+                isExpanded={expandedEventIds.has(activeProposal.id)}
+                onToggleExpanded={() => toggleEventExpanded(activeProposal.id)}
+                onUpdateAttendance={() => openAttendanceModal(activeProposal, 'edit')}
+                onViewInscritos={() => openAttendanceModal(activeProposal, 'view')}
+              />
+            </section>
           )}
         </main>
       )}
