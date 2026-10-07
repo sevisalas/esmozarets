@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Attendance, DanceEvent, Member, Place } from './types';
-import { addAttendance, addEvent, addMember, addPlace, deleteEvent, getConfiguredDataSource, loadData, loginMember, logoutMember, removeAttendance, saveSampleEvents, updateEvent, updateMember, updatePlace, uploadEventImage, type DataSourceMeta, type StorageResult } from './storage';
+import { addAttendance, addEvent, addMember, addPlace, deleteEvent, deletePlace, getConfiguredDataSource, loadData, loginMember, logoutMember, removeAttendance, saveSampleEvents, updateEvent, updateMember, updatePlace, uploadEventImage, type DataSourceMeta, type StorageResult } from './storage';
 import { getAttendanceSummary, isEventPending, compareEvents } from './utils';
 import { EventCard } from './components/EventCard';
 import { AttendanceModal } from './components/AttendanceModal';
@@ -394,6 +394,11 @@ export default function App() {
   };
 
   const handleCreatePlace = async (place: Place) => {
+    const name = place.name.trim().toLocaleLowerCase();
+    if (places.some((item) => item.name.trim().toLocaleLowerCase() === name)) {
+      window.alert(`Ya existe un lugar llamado "${place.name}".`);
+      return;
+    }
     setIsSaving(true);
     try {
       syncState(await addPlace(place));
@@ -410,6 +415,19 @@ export default function App() {
     try {
       syncState(await updatePlace(place));
       showTemporaryMessage('Lugar guardado');
+    } catch (error) {
+      setDataSourceError(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeletePlace = async (place: Place) => {
+    if (!window.confirm(`¿Eliminar el lugar "${place.name}"?`)) return;
+    setIsSaving(true);
+    try {
+      syncState(await deletePlace(place.id));
+      showTemporaryMessage('Lugar eliminado');
     } catch (error) {
       setDataSourceError(error);
     } finally {
@@ -658,6 +676,7 @@ export default function App() {
           onUpdateMember={handleUpdateMember}
           onCreatePlace={handleCreatePlace}
           onUpdatePlace={handleUpdatePlace}
+          onDeletePlace={handleDeletePlace}
           isSaving={isSaving}
           onClose={() => {
             setIsAdminOpen(false);

@@ -434,6 +434,11 @@ export async function savePlace(place: Place): Promise<AppData> {
   return getAllData();
 }
 
+export async function deletePlace(id: string): Promise<AppData> {
+  await baserowFetch<void>(tableUrl((config.placesTableId || config.eventsTableId) as string, id), { method: 'DELETE' });
+  return getAllData();
+}
+
 export async function saveEvent(event: DanceEvent): Promise<AppData> {
   const eventImage = await imageFieldPayload(event.imageUrl, `evento-${event.title}`);
   const payload = { ...eventToPayload(event), ...(eventImage !== undefined ? { imagen: eventImage } : {}) };

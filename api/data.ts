@@ -40,6 +40,7 @@ export default async function handler(req: any, res: any) {
     let data: AppData;
     if (action === 'saveMember') data = await store.saveMember(payload as Member);
     else if (action === 'savePlace') data = await store.savePlace(payload as Place);
+    else if (action === 'deletePlace') data = await store.deletePlace(String(payload?.placeId));
     else if (action === 'saveEvent') data = await store.saveEvent(payload as DanceEvent);
     else if (action === 'deleteEvent') data = await store.deleteEvent(String(payload?.eventId));
     else if (action === 'saveAttendance') data = await store.saveAttendance(payload as Attendance);

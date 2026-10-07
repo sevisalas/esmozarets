@@ -18,6 +18,7 @@ interface AdminPanelProps {
   onUpdateMember: (member: Member) => Promise<void>;
   onCreatePlace: (place: Place) => Promise<void>;
   onUpdatePlace: (place: Place) => Promise<void>;
+  onDeletePlace: (place: Place) => Promise<void>;
   isSaving?: boolean;
   onClose: () => void;
 }
@@ -35,6 +36,7 @@ export function AdminPanel({
   onUpdateMember,
   onCreatePlace,
   onUpdatePlace,
+  onDeletePlace,
   isSaving = false,
   onClose,
 }: AdminPanelProps) {
@@ -211,6 +213,7 @@ export function AdminPanel({
                   <button className="secondary-btn" onClick={() => void onUpdatePlace({ ...place, active: !place.active })} disabled={isSaving}>
                     {place.active ? 'Desactivar' : 'Activar'}
                   </button>
+                  <button className="secondary-btn" onClick={() => void onDeletePlace(place)} disabled={isSaving}>Eliminar</button>
                 </div>
               </li>
             ))}

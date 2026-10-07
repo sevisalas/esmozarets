@@ -22,6 +22,7 @@ export function PlaceForm({ initialPlace, onSubmit, onCancel, onUploadImage }: P
   const [place, setPlace] = useState<Place>(emptyPlace());
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageMessage, setImageMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setPlace(initialPlace ?? emptyPlace());
@@ -29,7 +30,9 @@ export function PlaceForm({ initialPlace, onSubmit, onCancel, onUploadImage }: P
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    void onSubmit({
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    void Promise.resolve(onSubmit({
       ...place,
       id: initialPlace?.id ?? crypto.randomUUID(),
       name: place.name.trim(),
@@ -37,7 +40,7 @@ export function PlaceForm({ initialPlace, onSubmit, onCancel, onUploadImage }: P
       notes: place.notes.trim(),
       imageUrl: place.imageUrl.trim(),
       createdAt: initialPlace?.createdAt ?? new Date().toISOString(),
-    });
+    })).finally(() => setIsSubmitting(false));
   };
 
   return (
@@ -93,8 +96,8 @@ export function PlaceForm({ initialPlace, onSubmit, onCancel, onUploadImage }: P
       </label>
       <div className="modal-actions">
         <button type="button" className="secondary-btn" onClick={onCancel}>Cancelar</button>
-        <button type="submit" className="primary-btn" disabled={isUploadingImage}>
-          {isUploadingImage ? 'Subiendo foto...' : 'Guardar lugar'}
+        <button type="submit" className="primary-btn" disabled={isUploadingImage || isSubmitting}>
+          {isUploadingImage ? 'Subiendo foto...' : isSubmitting ? 'Guardando...' : 'Guardar lugar'}
         </button>
       </div>
     </form>

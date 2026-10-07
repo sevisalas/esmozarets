@@ -315,6 +315,17 @@ export async function updatePlace(place: Place): Promise<StorageResult> {
   }));
 }
 
+export async function deletePlace(placeId: string): Promise<StorageResult> {
+  if (getConfiguredDataSource() === 'baserow') {
+    return runBaserow(() => remoteRequest('deletePlace', { placeId }));
+  }
+
+  return applyLocalChange(getLocalData(), (data) => ({
+    ...data,
+    places: data.places.filter((place) => place.id !== placeId),
+  }));
+}
+
 export async function addEvent(event: DanceEvent): Promise<StorageResult> {
   if (getConfiguredDataSource() === 'baserow') {
     return runBaserow(() => remoteRequest('saveEvent', event));
