@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { DanceEvent, Member, Place } from '../types';
 import { compareEvents, formatDateLabel, getEventStateLabel } from '../utils';
 import { EventForm } from './EventForm';
@@ -47,6 +47,17 @@ export function AdminPanel({
   const [isMemberFormOpen, setIsMemberFormOpen] = useState(false);
   const [isPlaceFormOpen, setIsPlaceFormOpen] = useState(false);
 
+  // El formulario se abre arriba de su tarjeta: llevamos la pantalla hasta él para que se vea.
+  useEffect(() => {
+    if (isEventFormOpen) document.getElementById('form-evento')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [isEventFormOpen, editingEvent]);
+  useEffect(() => {
+    if (isPlaceFormOpen) document.getElementById('form-lugar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [isPlaceFormOpen, editingPlace]);
+  useEffect(() => {
+    if (isMemberFormOpen) document.getElementById('form-miembro')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [isMemberFormOpen, editingMember]);
+
   if (!isAdmin) {
     return null;
   }
@@ -90,7 +101,7 @@ export function AdminPanel({
             }}>Nuevo evento</button>
           </div>
           {isEventFormOpen && (
-            <EventForm
+            <div id="form-evento" className="form-anchor"><EventForm
               initialEvent={editingEvent}
               places={places}
               onUploadImage={onUploadEventImage}
@@ -107,7 +118,7 @@ export function AdminPanel({
                 setEditingEvent(null);
                 setIsEventFormOpen(false);
               }}
-            />
+            /></div>
           )}
           <ul className="list-stack">
             {sortedEvents.map((event) => (
@@ -170,7 +181,7 @@ export function AdminPanel({
             }}>Nuevo lugar</button>
           </div>
           {isPlaceFormOpen && (
-            <PlaceForm
+            <div id="form-lugar" className="form-anchor"><PlaceForm
               initialPlace={editingPlace}
               onUploadImage={onUploadEventImage}
               onSubmit={async (place) => {
@@ -183,7 +194,7 @@ export function AdminPanel({
                 setEditingPlace(null);
                 setIsPlaceFormOpen(false);
               }}
-            />
+            /></div>
           )}
           <ul className="list-stack">
             {[...places].sort((a, b) => a.name.localeCompare(b.name)).map((place) => (
@@ -229,7 +240,7 @@ export function AdminPanel({
             }}>Crear miembro</button>
           </div>
           {isMemberFormOpen && (
-            <MemberForm
+            <div id="form-miembro" className="form-anchor"><MemberForm
               initialMember={editingMember}
               onSubmit={async (member) => {
                 if (editingMember) {
@@ -244,7 +255,7 @@ export function AdminPanel({
                 setEditingMember(null);
                 setIsMemberFormOpen(false);
               }}
-            />
+            /></div>
           )}
           <ul className="list-stack">
             {sortedMembers.map((member) => (

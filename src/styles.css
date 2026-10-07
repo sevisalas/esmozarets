@@ -1273,3 +1273,7 @@ textarea {
 .list-stack li p {
   overflow-wrap: anywhere;
 }
+
+.form-anchor {
+  scroll-margin-top: 12px;
+}
