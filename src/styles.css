@@ -1306,3 +1306,13 @@ textarea {
   font-weight: 700;
   color: var(--color-primary-dark);
 }
+
+.event-address {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.event-address a {
+  color: var(--color-muted);
+}

@@ -70,6 +70,11 @@ export function EventCard({
               <p className="event-date">{event.isPlanning ? 'Fecha y lugar por decidir' : `${formatDateLabel(event.date)} · ${event.time}`}</p>
               <h2>{event.title}</h2>
               {!event.isPlanning && placeName && <p className="event-place">{placeName}</p>}
+              {!event.isPlanning && eventPlace?.address && (
+                /^https?:\/\//i.test(eventPlace.address)
+                  ? <p className="event-address"><a href={eventPlace.address} target="_blank" rel="noreferrer">Ver en el mapa</a></p>
+                  : <p className="event-address"><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventPlace.address)}`} target="_blank" rel="noreferrer">{eventPlace.address}</a></p>
+              )}
             </div>
             {event.isPlanning && <span className="pill pill-no">En propuesta</span>}
           </div>
