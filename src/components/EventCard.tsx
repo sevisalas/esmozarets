@@ -48,9 +48,9 @@ export function EventCard({
             {event.isPlanning ? 'Quedada por decidir' : [formatDateLabel(event.date), event.time].filter(Boolean).join(' · ')}
           </p>
           <h2 className="collapsed-title">{event.title}</h2>
-          {!event.isPlanning && placeName && <p className="collapsed-place">📍 {placeName}</p>}
+          {!event.isPlanning && placeName && <p className="collapsed-place">{placeName}</p>}
           <p className="collapsed-status">
-            {event.isPlanning ? `${event.possibleDates.length} fechas · ${candidatePlaces.length} lugares candidatos` : `${summary.yes} se apuntan`}
+            {event.isPlanning ? `${event.possibleDates.length} fechas · ${candidatePlaces.length} lugares candidatos` : `${summary.yes} confirmados`}
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export function EventCard({
             <div>
               <p className="event-date">{event.isPlanning ? 'Fecha y lugar por decidir' : `${formatDateLabel(event.date)} · ${event.time}`}</p>
               <h2>{event.title}</h2>
-              {!event.isPlanning && placeName && <p className="event-place">📍 {placeName}</p>}
+              {!event.isPlanning && placeName && <p className="event-place">{placeName}</p>}
             </div>
             {event.isPlanning && <span className="pill pill-no">En propuesta</span>}
           </div>
