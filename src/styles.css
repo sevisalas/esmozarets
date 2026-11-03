@@ -1290,3 +1290,19 @@ textarea {
     overflow-x: visible;
   }
 }
+
+/* Foto del evento: nunca ocupa media pantalla en el móvil */
+@media (max-width: 559px) {
+  .event-poster img {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    max-height: 200px;
+  }
+}
+
+.collapsed-place,
+.event-place {
+  margin: 2px 0 6px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}

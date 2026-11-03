@@ -29,7 +29,9 @@ export function EventCard({
   const memberNames = attendances
     .map((attendance) => members.find((member) => member.id === attendance.memberId)?.name)
     .filter(Boolean) as string[];
-  const placeImageUrl = places.find((place) => place.id === event.placeId)?.imageUrl ?? '';
+  const eventPlace = places.find((place) => place.id === event.placeId);
+  const placeName = eventPlace?.name || event.location;
+  const placeImageUrl = eventPlace?.imageUrl ?? '';
   const posterUrl = event.imageUrl || placeImageUrl;
   const shouldShowPoster = Boolean(posterUrl) && !hasPosterError;
   const candidatePlaces = event.candidatePlaceIds.map((id) => places.find((place) => place.id === id)?.name).filter(Boolean);
@@ -43,11 +45,12 @@ export function EventCard({
       <article className="event-card event-card-collapsed">
         <div className="event-collapsed-summary">
           <p className="collapsed-meta">
-            {event.isPlanning ? 'Quedada por decidir' : [formatDateLabel(event.date), event.time, event.location].filter(Boolean).join(' · ')}
+            {event.isPlanning ? 'Quedada por decidir' : [formatDateLabel(event.date), event.time].filter(Boolean).join(' · ')}
           </p>
           <h2 className="collapsed-title">{event.title}</h2>
+          {!event.isPlanning && placeName && <p className="collapsed-place">📍 {placeName}</p>}
           <p className="collapsed-status">
-            {event.isPlanning ? `${event.possibleDates.length} fechas · ${candidatePlaces.length} lugares candidatos` : `${event.clothingRequired ? 'Reserva cerrada' : 'Reserva abierta'} · ${summary.yes} se apuntan`}
+            {event.isPlanning ? `${event.possibleDates.length} fechas · ${candidatePlaces.length} lugares candidatos` : `${summary.yes} se apuntan`}
           </p>
         </div>
 
@@ -66,11 +69,9 @@ export function EventCard({
             <div>
               <p className="event-date">{event.isPlanning ? 'Fecha y lugar por decidir' : `${formatDateLabel(event.date)} · ${event.time}`}</p>
               <h2>{event.title}</h2>
-              {!event.isPlanning && <p className="event-place">{event.location}</p>}
+              {!event.isPlanning && placeName && <p className="event-place">📍 {placeName}</p>}
             </div>
-            <span className={`pill ${!event.isPlanning && event.clothingRequired ? 'pill-yes' : 'pill-no'}`}>
-              {event.isPlanning ? 'En propuesta' : event.clothingRequired ? 'Reserva confirmada' : 'Pendiente de reservar'}
-            </span>
+            {event.isPlanning && <span className="pill pill-no">En propuesta</span>}
           </div>
 
           <div className="event-meta">
@@ -80,7 +81,7 @@ export function EventCard({
                 <p><strong>Posibles fechas:</strong> {event.possibleDates.map(formatDateLabel).join(', ') || 'Pendientes'}</p>
               </>
             )}
-            <p><strong>Sobre el almuerzo:</strong> {event.notes || 'Todavía no hay más detalles.'}</p>
+            {event.notes && <p><strong>Sobre el almuerzo:</strong> {event.notes}</p>}
           </div>
 
           <div className="counts-row">
