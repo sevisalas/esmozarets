@@ -91,7 +91,7 @@ export function EventCard({
                 <p><strong>Posibles fechas:</strong> {event.possibleDates.map(formatDateLabel).join(', ') || 'Pendientes'}</p>
               </>
             )}
-            {event.notes && <p><strong>Sobre el almuerzo:</strong> {event.notes}</p>}
+            <p><strong>Observaciones:</strong> {event.notes || 'Sin observaciones.'}</p>
           </div>
 
           <div className="counts-row">
