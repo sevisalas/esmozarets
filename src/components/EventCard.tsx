@@ -49,7 +49,11 @@ export function EventCard({
           </p>
           <h2 className="collapsed-title">{event.title}</h2>
           {!event.isPlanning && placeName && <p className="collapsed-place">{placeName}</p>}
-          {!event.isPlanning && eventPlace?.address && !/^https?:\/\//i.test(eventPlace.address) && <p className="event-address">{eventPlace.address}</p>}
+          {!event.isPlanning && eventPlace?.address && (
+            /^https?:\/\//i.test(eventPlace.address)
+              ? <p className="event-address"><a href={eventPlace.address} target="_blank" rel="noreferrer">Ver en el mapa</a></p>
+              : <p className="event-address">{eventPlace.address}</p>
+          )}
           <p className="collapsed-status">
             {event.isPlanning ? `${event.possibleDates.length} fechas · ${candidatePlaces.length} lugares candidatos` : `${summary.yes} confirmados`}
           </p>
