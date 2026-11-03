@@ -1316,3 +1316,10 @@ textarea {
 .event-address a {
   color: var(--color-muted);
 }
+
+.build-id {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}

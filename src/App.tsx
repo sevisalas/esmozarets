@@ -15,6 +15,8 @@ import { EventForm } from './components/EventForm';
 const MEMBER_STORAGE_KEY = 'alumni_lunch_member_id';
 const showDiagnostics = import.meta.env.VITE_SHOW_DIAGNOSTICS === 'true';
 
+declare const __BUILD_ID__: string;
+
 export default function App() {
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<DanceEvent[]>([]);
@@ -710,6 +712,8 @@ export default function App() {
       {isAuthenticated && isHelpOpen && (
         <HelpModal isAdmin={isAdmin} onClose={() => setIsHelpOpen(false)} />
       )}
+
+      <p className="build-id">Versión {__BUILD_ID__}</p>
     </div>
   );
 }
